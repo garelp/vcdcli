@@ -38,6 +38,7 @@ def display_vapp(l_url):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("vapp", nargs='?', help="operation on Vapp")
+    parser.add_argument("template", nargs='?', help="operation on templates")
     parser.add_argument("--login", action="store_true", help="login into VCloud")
     parser.add_argument("--list", action="store_true", help="list data")
     parser.add_argument("--username", action="store_true", help="VCloud username")
