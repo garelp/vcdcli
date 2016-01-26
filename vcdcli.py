@@ -11,12 +11,12 @@ import argparse
     
 
 def login_VCD(l_user,l_password,l_org,l_url):
-    f_http = os.popen("http --session=vcloud -a " + l_user + "@" + l_org + ":" + l_password +" POST " + l_url + "/sessions 'Accept:application/*+xml;version=5.1'")
+    f_http = os.popen("http --session=vcdcli -a " + l_user + "@" + l_org + ":" + l_password +" POST " + l_url + "/sessions 'Accept:application/*+xml;version=5.1'")
     f_xmldata = f_http.read()
 
 def display_vapp(l_url):
     # Make the query to gather the info
-    f_http = os.popen('http --session=vcloud GET ' + l_url + '/vApps/query?pageSize=200')
+    f_http = os.popen('http --session=vcdcli GET ' + l_url + '/vApps/query?pageSize=200')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
 
@@ -37,7 +37,7 @@ def display_vapp(l_url):
     print t_vapp.get_string(sortby="Vapp Name")
 
 def display_template(l_url):
-    f_http = os.popen('http --session=vcloud GET ' + l_url + '/query?type=vAppTemplate&pageSize=200')
+    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&pageSize=200"')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
 
@@ -59,13 +59,9 @@ def display_template(l_url):
     print t_template.get_string(sortby="Template Name")
 
 def display_pool(l_url):
-    f_http = os.popen('http --session=vcloud GET ' + l_url + '/query?type=orgVdc&pageSize=200')
+    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=orgVdc&pageSize=200"')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
-    
-    #print tree.tag
-    #print tree.attrib
-    #print xmldata
 
     t_pool = PrettyTable(['Pool Name', '# of Vapps', 'Cpu Used(MHz)', 'Cpu Limit(MHz)', 'Memory Used(MB)', 'Memory Limit(MB)', 'Storage Used(MB)', 'Storage Limit(MB)'])
     t_pool.align['Pool Name'] = 'l'
@@ -84,8 +80,83 @@ def display_pool(l_url):
 
     print t_pool.get_string(sortby="Pool Name")
 
-    #print 'pool list ok'
 
+def show_vapp_info(l_url, l_vappName):
+    vappInfo = get_vapp_info(l_url,l_vappName)
+    l_vappUrl = vappInfo['vappUrl']
+
+    f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
+    xmldata = f_http.read()
+    Vapptree = ET.fromstring(xmldata)
+
+    #print tree.tag
+    #print tree.attrib
+    #print xmldata
+
+    for elem in Vapptree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
+        l_vmUrl = elem.attrib.get('href')
+    
+    vmCusto = get_vm_custo(l_vmUrl)
+
+    t_vappInfo = PrettyTable(['Attribute', 'Value'])
+    t_vappInfo.align['Value'] = 'l'
+    
+    
+    for key, value in vappInfo.iteritems():
+        t_vappInfo.add_row([key, value])
+
+    for key, value in vmCusto.iteritems():
+        t_vappInfo.add_row([key, value])
+    
+    print t_vappInfo
+
+def get_vm_custo(vm_url):
+    f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/guestCustomizationSection/')
+    xmldata = f_http.read()
+
+    vmCusto = {}
+
+    Vmtree = ET.fromstring(xmldata)
+    for elem in Vmtree:
+        #print elem.tag, elem.text
+        if elem.tag == '{http://www.vmware.com/vcloud/v1.5}Enabled':
+            vmCusto['Enabled'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}ChangeSid':
+            vmCusto['ChangeSid'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}JoinDomainEnabled':
+            vmCusto['JoinDomainEnabled'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}AdminPasswordEnabled':
+            vmCusto['AdminPasswordEnabled'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}AdminPasswordAuto':
+            vmCusto['AdminPasswordAuto'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}AdminPassword':
+            vmCusto['AdminPassword'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}ResetPasswordRequired':
+            vmCusto['ResetPasswordRequired'] = elem.text
+        elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}ComputerName':
+            vmCusto['ComputerName'] = elem.text
+
+    return vmCusto
+    
+
+def get_vapp_info(l_url,l_vappName):
+    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vApp&filter=(name==' + l_vappName + ')"')
+    xmldata = f_http.read()
+    tree = ET.fromstring(xmldata)
+    
+    for elem in tree.findall('{http://www.vmware.com/vcloud/v1.5}VAppRecord'):
+        vappUrl = elem.attrib.get('href')
+        vappName = elem.attrib.get('name')
+        vappStatus =  elem.attrib.get('status')
+        vappDeploy =  elem.attrib.get('isDeployed')
+        vappVdc =  elem.attrib.get('vdcName')
+        vappCPU =  elem.attrib.get('numberOfCpus')
+        vappMem = elem.attrib.get('memoryAllocationMB')
+        vappStorage = elem.attrib.get('storageKB')
+        vappCreationDate = elem.attrib.get('creationDate')
+        vappOwnerName = elem.attrib.get('ownerName')
+    
+    return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName}
 
 if __name__ == '__main__':
     # Parsing of the command line aguments.
@@ -93,6 +164,7 @@ if __name__ == '__main__':
     parser.add_argument("operation", nargs='?', help="vapp, template...")
     parser.add_argument("--login", action="store_true", help="login into VCloud")
     parser.add_argument("--list", action="store_true", help="list data")
+    parser.add_argument("--show", dest='vappName', action="store", help="show data")
     parser.add_argument("--username", action="store_true", help="VCloud username")
     parser.add_argument("--password", action="store_true", help="VCloud password")
     parser.add_argument("--org", action="store_true", help="VCloud Organisation")
@@ -117,6 +189,8 @@ if __name__ == '__main__':
     if args.operation == 'vapp':
         if args.list:
             display_vapp(vcdUrl)
+        elif args.vappName:
+            show_vapp_info(vcdUrl,args.vappName)
 
     if args.operation == 'pool':
         if args.list:
