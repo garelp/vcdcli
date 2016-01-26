@@ -105,6 +105,8 @@ def show_vapp_info(l_url, l_vappName):
     for key, value in vappInfo.iteritems():
         t_vappInfo.add_row([key, value])
 
+    t_vappInfo.add_row(['----- VM -----',''])
+    
     for key, value in vmCusto.iteritems():
         t_vappInfo.add_row([key, value])
     
@@ -120,7 +122,7 @@ def get_vm_custo(vm_url):
     for elem in Vmtree:
         #print elem.tag, elem.text
         if elem.tag == '{http://www.vmware.com/vcloud/v1.5}Enabled':
-            vmCusto['Enabled'] = elem.text
+            vmCusto['CustoEnabled'] = elem.text
         elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}ChangeSid':
             vmCusto['ChangeSid'] = elem.text
         elif elem.tag == '{http://www.vmware.com/vcloud/v1.5}JoinDomainEnabled':
