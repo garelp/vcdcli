@@ -89,10 +89,6 @@ def show_vapp_info(l_url, l_vappName):
     xmldata = f_http.read()
     Vapptree = ET.fromstring(xmldata)
 
-    #print tree.tag
-    #print tree.attrib
-    #print xmldata
-
     for elem in Vapptree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
         l_vmUrl = elem.attrib.get('href')
     
@@ -105,8 +101,7 @@ def show_vapp_info(l_url, l_vappName):
     for key, value in vappInfo.iteritems():
         t_vappInfo.add_row([key, value])
 
-    t_vappInfo.add_row(['----- VM -----',''])
-    
+    t_vappInfo.add_row(['-------- VM ---------',''])
     for key, value in vmCusto.iteritems():
         t_vappInfo.add_row([key, value])
     
@@ -193,15 +188,16 @@ if __name__ == '__main__':
             display_vapp(vcdUrl)
         elif args.vappName:
             show_vapp_info(vcdUrl,args.vappName)
-
-    if args.operation == 'pool':
+    elif args.operation == 'pool':
         if args.list:
             display_pool(vcdUrl)
 
-    if args.operation == 'template':
+    elif args.operation == 'template':
         if args.list:
             display_template(vcdUrl)
-    
+    else:
+        parser.print_help()
+        
     sys.exit(0) 
 
 
