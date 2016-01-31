@@ -8,7 +8,7 @@ import time, datetime, os
 import sys
 from prettytable import PrettyTable
 import argparse
-    
+from math import *
 
 def login_VCD(l_user,l_password,l_org,l_url):
     f_http = os.popen("http --session=vcdcli -a " + l_user + "@" + l_org + ":" + l_password +" POST " + l_url + "/sessions 'Accept:application/*+xml;version=5.1'")
@@ -76,6 +76,10 @@ def display_pool(l_url):
         poolStorageUsed = elem.attrib.get('storageUsedMB')
         poolStorageLimit = elem.attrib.get('storageLimitMB')
         if poolName:
+            poolMemoryUsedPercent = int((float(poolMemoryUsed) / float(poolMemoryLimit)) * 100)
+            poolMemoryUsed = poolMemoryUsed + '  (' + str(poolMemoryUsedPercent) + '%)'
+            poolStorageUsedPercent = int((float(poolStorageUsed) / float(poolStorageLimit)) * 100)
+            poolStorageUsed = poolStorageUsed + '  (' + str(poolStorageUsedPercent) + '%)'
             t_pool.add_row([poolName, poolVapps, poolCpuUsed, poolCpuLimit,poolMemoryUsed,poolMemoryLimit,poolStorageUsed,poolStorageLimit])
 
     print t_pool.get_string(sortby="Pool Name")
