@@ -163,7 +163,7 @@ if __name__ == '__main__':
     # Parsing of the command line aguments.
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", nargs='?', help="vapp, template...")
-    parser.add_argument("--login", action="store_true", help="login into VCloud")
+    parser.add_argument("--login", action="store_true", help="login with new credentials")
     parser.add_argument("--list", action="store_true", help="list data")
     parser.add_argument("--show", dest='vappName', action="store", help="show data")
     parser.add_argument("--username", action="store_true", help="VCloud username")
