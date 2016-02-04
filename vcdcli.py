@@ -45,7 +45,7 @@ def display_template(l_url):
     #print tree.attrib
     #print xmldata
     
-    t_template = PrettyTable(['Template Name', 'Storage (KB)', 'Status', 'Catalog Name'])
+    t_template = PrettyTable(['Template Name', 'Storage (KB)', 'NumCPU', 'Mem Alloc (MB)', '# VM', 'Status', 'Catalog Name'])
     t_template.align['Template Name'] = 'l'
     
     for elem in tree:
@@ -53,8 +53,12 @@ def display_template(l_url):
         templateStatus = elem.attrib.get('status')
         templateStorage = elem.attrib.get('storageKB')
         templateCatalog = elem.attrib.get('catalogName')
+        templateNumCPU = elem.attrib.get('numberOfCpus')
+        templateMemAlloc = elem.attrib.get('memoryAllocationMB')
+        templateNumVM = elem.attrib.get('numberOfVMs')
+        
         if templateName:
-            t_template.add_row([templateName, templateStorage, templateStatus, templateCatalog])
+            t_template.add_row([templateName, templateStorage, templateNumCPU, templateMemAlloc, templateNumVM, templateStatus, templateCatalog])
 
     print t_template.get_string(sortby="Template Name")
 
@@ -156,13 +160,90 @@ def get_vapp_info(l_url,l_vappName):
         vappStorage = elem.attrib.get('storageKB')
         vappCreationDate = elem.attrib.get('creationDate')
         vappOwnerName = elem.attrib.get('ownerName')
-    
+
     return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName}
 
-def show_tmpl_info(_url,l_tmplName):
+def show_tmpl_info(l_url,l_tmplName):
     print 'show template info' + l_tmplName
+    tmpl_info = get_tmpl_info(l_url,l_tmplName)
 
+def get_tmpl_info(l_url,l_tmplName):
+    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&filter=(name==' + l_tmplName + ')"')
+    xmldata = f_http.read()
+    #print xmldata
+    tree = ET.fromstring(xmldata)
+    
+    for elem in tree.findall('{http://www.vmware.com/vcloud/v1.5}VAppTemplateRecord'):
+        tmplUrl = elem.attrib.get('href')
+        tmplName = elem.attrib.get('name')
+        tmplStatus = elem.attrib.get('status')
+        tmplOwner = elem.attrib.get('ownerName')
+        tmplCpuAllocMhz = elem.attrib.get('cpuAllocationInMhz')
+        tmplMemAlloc = elem.attrib.get('memoryAllocationMB')
+        tmplNumVM = elem.attrib.get('numberOfVMs')
+        tmplVdcName = elem.attrib.get('vdcName')
+        tmplStorage = elem.attrib.get('storageKB')
+        tmplCreationDate = elem.attrib.get('creationDate')
+        tmplNumCPU = elem.attrib.get('numberOfCpus')
+    
+    return {'tmplName':tmplName, 'tmplUrl':tmplUrl, 'tmplStatus':tmplStatus, 'tmplOwner':tmplOwner, 'tmplCpuAllocMhz':tmplCpuAllocMhz, 'tmplMemAlloc':tmplMemAlloc, 'tmplNumVM':tmplNumVM, 'tmplVdcName':tmplVdcName, 'tmplStorage':tmplStorage, 'tmplCreationDate':tmplCreationDate, 'tmplNumCPU':tmplNumCPU }
 
+def delete_template(l_url,l_tmplName):
+    #print 'Deleting template ' + l_tmplName
+    tmpl_info = get_tmpl_info(l_url, l_tmplName)
+    tmplUrl = tmpl_info['tmplUrl']
+    
+    if tmplUrl:   
+        f_http = os.popen('http --session=vcdcli DELETE ' + tmplUrl)
+        xmldata = f_http.read()
+        task_info = decode_task_info(xmldata)
+        print task_info['taskOperation']
+        l_taskUrl = task_info['taskUrl']
+        wait_for_task(l_taskUrl)
+
+def decode_task_info(l_xmlTask):
+    taskTree = ET.fromstring(l_xmlTask)
+    taskStatus = taskTree.attrib.get('status')
+    taskStarttime = taskTree.attrib.get('startTime')
+    taskOperation = taskTree.attrib.get('operation')
+    taskId = taskTree.attrib.get('id').split( ':' )
+    taskID = taskId[3]
+    taskUrl = taskTree.attrib.get('href')
+    
+    return { 'taskStatus':taskStatus, 'taskId':taskID, 'taskUrl':taskUrl, 'taskOperation':taskOperation }
+
+def get_task_info(l_taskUrl):
+    f_http = os.popen('http --session=vcdcli GET "' + l_taskUrl + '"')
+    l_xmlTask = f_http.read()
+    
+    taskTree = ET.fromstring(l_xmlTask)    
+    taskStatus = taskTree.attrib.get('status')
+    taskStarttime = taskTree.attrib.get('startTime')
+    taskOperation = taskTree.attrib.get('operation')
+    taskId = taskTree.attrib.get('id').split( ':' )
+    taskID = taskId[3]
+    taskUrl = taskTree.attrib.get('href')
+    
+    return { 'taskStatus':taskStatus, 'taskId':taskID, 'taskUrl':taskUrl, 'taskOperation':taskOperation }
+
+def wait_for_task(l_taskUrl):
+    task_info = get_task_info(l_taskUrl)
+    taskStatus = task_info['taskStatus']
+    while taskStatus == 'running' or taskStatus == 'preRunning':
+        sys.stdout.write('#')
+        sys.stdout.flush()
+        task_info = get_task_info(l_taskUrl)
+        taskStatus = task_info['taskStatus']
+    
+    if taskStatus == 'error':
+        print 'Task Error.'
+    else:
+        print '\nDone.'
+        
+
+"""
+************************************** Main **********************************************************
+"""
 if __name__ == '__main__':
     # Parsing of the command line aguments.
     parser = argparse.ArgumentParser()
@@ -170,6 +251,7 @@ if __name__ == '__main__':
     parser.add_argument("--login", action="store_true", help="login with new credentials")
     parser.add_argument("--list", action="store_true", help="list data")
     parser.add_argument("--show", dest='objName', action="store", help="show data")
+    parser.add_argument("--delete", dest='objToDelete', action="store", help="delete data")
     parser.add_argument("--username", action="store_true", help="VCloud username")
     parser.add_argument("--password", action="store_true", help="VCloud password")
     parser.add_argument("--org", action="store_true", help="VCloud Organisation")
@@ -205,6 +287,8 @@ if __name__ == '__main__':
             display_template(vcdUrl)
         elif args.objName:
             show_tmpl_info(vcdUrl,args.objName)
+        elif args.objToDelete:
+            delete_template(vcdUrl,args.objToDelete)
     else:
         parser.print_help()
         
