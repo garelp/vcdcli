@@ -159,13 +159,17 @@ def get_vapp_info(l_url,l_vappName):
     
     return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName}
 
+def show_tmpl_info(_url,l_tmplName):
+    print 'show template info' + l_tmplName
+
+
 if __name__ == '__main__':
     # Parsing of the command line aguments.
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", nargs='?', help="vapp, template...")
     parser.add_argument("--login", action="store_true", help="login with new credentials")
     parser.add_argument("--list", action="store_true", help="list data")
-    parser.add_argument("--show", dest='vappName', action="store", help="show data")
+    parser.add_argument("--show", dest='objName', action="store", help="show data")
     parser.add_argument("--username", action="store_true", help="VCloud username")
     parser.add_argument("--password", action="store_true", help="VCloud password")
     parser.add_argument("--org", action="store_true", help="VCloud Organisation")
@@ -190,8 +194,8 @@ if __name__ == '__main__':
     if args.operation == 'vapp':
         if args.list:
             display_vapp(vcdUrl)
-        elif args.vappName:
-            show_vapp_info(vcdUrl,args.vappName)
+        elif args.objName:
+            show_vapp_info(vcdUrl,args.objName)
     elif args.operation == 'pool':
         if args.list:
             display_pool(vcdUrl)
@@ -199,6 +203,8 @@ if __name__ == '__main__':
     elif args.operation == 'template':
         if args.list:
             display_template(vcdUrl)
+        elif args.objName:
+            show_tmpl_info(vcdUrl,args.objName)
     else:
         parser.print_help()
         
