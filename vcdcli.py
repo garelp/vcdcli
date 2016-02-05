@@ -33,6 +33,7 @@ def display_vapp(l_url,l_vdcName):
     t_vapp = PrettyTable(['Vapp Name', 'CPU', 'Ram (MB)', 'Storage (KB)', 'Status', 'Deployed', 'Vdc'])
     t_vapp.align['Vapp Name'] = 'l'
 
+    # if there is more than 1 page do the others.
     for pageNum in range(1,queryPages+1):
         f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + queryVdc + '"')
         xmldata = f_http.read()
@@ -258,6 +259,32 @@ def wait_for_task(l_taskUrl):
     else:
         print '\nDone.'
         
+def power_on_vapp(l_url,l_vappName):
+    vappInfo = get_vapp_info(l_url,l_vappName)
+    if vappInfo:
+        if vappInfo['vappStatus'] == 'POWERED_OFF':
+            vappUrl = vappInfo['vappUrl']
+            f_http = os.popen('http --session=vcdcli POST ' + vappUrl + '/power/action/powerOn')
+            xmldata = f_http.read()
+            task_info = decode_task_info(xmldata)
+            print task_info['taskOperation']
+            l_taskUrl = task_info['taskUrl']
+            wait_for_task(l_taskUrl)
+
+
+def power_off_vapp(l_url,l_vappName):
+    print 'power off vapp ' + l_vappName
+    vappInfo = get_vapp_info(l_url,l_vappName)
+    if vappInfo:
+        if vappInfo['vappStatus'] == 'POWERED_ON':
+            vappUrl = vappInfo['vappUrl']
+            f_http = os.popen('http --session=vcdcli POST ' + vappUrl + '/power/action/powerOff')
+            xmldata = f_http.read()
+            task_info = decode_task_info(xmldata)
+            print task_info['taskOperation']
+            l_taskUrl = task_info['taskUrl']
+            wait_for_task(l_taskUrl)
+
 
 """
 ************************************** Main **********************************************************
@@ -268,6 +295,8 @@ if __name__ == '__main__':
     parser.add_argument("operation", nargs='?', help="vapp, template, pool ...")
     parser.add_argument("--login", action="store_true", help="login with new credentials")
     parser.add_argument("--list", action="store_true", help="list data")
+    parser.add_argument("--poweron", dest='vappON', action="store", help="Power on Vapp")
+    parser.add_argument("--poweroff", dest='vappOFF', action="store", help="Power off Vapp")
     parser.add_argument("--show", dest='objName', action="store", help="show data")
     parser.add_argument("--delete", dest='objToDelete', action="store", help="delete data")
     parser.add_argument("--vdc", dest='vdcName', action="store", help="select specific pool")
@@ -297,6 +326,10 @@ if __name__ == '__main__':
             display_vapp(vcdUrl,args.vdcName)
         elif args.objName:
             show_vapp_info(vcdUrl,args.objName)
+        elif args.vappON:
+            power_on_vapp(vcdUrl,args.vappON)
+        elif args.vappOFF:
+            power_off_vapp(vcdUrl,args.vappOFF)
     elif args.operation == 'pool':
         if args.list:
             display_pool(vcdUrl)
