@@ -273,7 +273,8 @@ def power_on_vapp(l_url,l_vappName):
 
 
 def power_off_vapp(l_url,l_vappName):
-    print 'power off vapp ' + l_vappName
+    vcdUndeployAction = '<UndeployVAppParams xmlns=\"http://www.vmware.com/vcloud/v1.5\"><UndeployPowerAction>powerOff</UndeployPowerAction></UndeployVAppParams>'
+    
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
@@ -282,6 +283,15 @@ def power_off_vapp(l_url,l_vappName):
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
             print task_info['taskOperation']
+            l_taskUrl = task_info['taskUrl']
+            wait_for_task(l_taskUrl)
+            
+        if vappInfo['vappDeploy'] == 'true':
+            vappUrl = vappInfo['vappUrl']            
+            f_http = os.popen('echo \'' + vcdUndeployAction +'\' | http --session=vcdcli POST ' + vappUrl + '/action/undeploy \'Content-type:application/vnd.vmware.vcloud.undeployVAppParams+xml; charset=ISO-8859-1\' \'Accept:application/*+xml;version=5.1\'')
+            xmldata = f_http.read()
+            task_info = decode_task_info(xmldata)
+            print 'Undeploying Virtual Application ' + l_vappName
             l_taskUrl = task_info['taskUrl']
             wait_for_task(l_taskUrl)
 
