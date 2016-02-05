@@ -14,9 +14,13 @@ def login_VCD(l_user,l_password,l_org,l_url):
     f_http = os.popen("http --session=vcdcli -a " + l_user + "@" + l_org + ":" + l_password +" POST " + l_url + "/sessions 'Accept:application/*+xml;version=5.1'")
     f_xmldata = f_http.read()
 
-def display_vapp(l_url):
+def display_vapp(l_url,l_vdcName):
+    queryVdc = ''
+    if l_vdcName:
+        queryVdc = '&filter=(vdcName==' + l_vdcName + ')'
+
     # Make the query to gather the info
-    f_http = os.popen('http --session=vcdcli GET ' + l_url + '/vApps/query?pageSize=128')
+    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128' + queryVdc + '"')
     xmldata = f_http.read()
     queryResult = ET.fromstring(xmldata)
     queryTotal = queryResult.attrib.get('total')
@@ -30,7 +34,7 @@ def display_vapp(l_url):
     t_vapp.align['Vapp Name'] = 'l'
 
     for pageNum in range(1,queryPages+1):
-        f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + '"')
+        f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + queryVdc + '"')
         xmldata = f_http.read()
     
         tree = ET.fromstring(xmldata)
@@ -290,7 +294,7 @@ if __name__ == '__main__':
 
     if args.operation == 'vapp':
         if args.list:
-            display_vapp(vcdUrl)
+            display_vapp(vcdUrl,args.vdcName)
         elif args.objName:
             show_vapp_info(vcdUrl,args.objName)
     elif args.operation == 'pool':
