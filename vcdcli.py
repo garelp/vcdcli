@@ -266,7 +266,7 @@ if __name__ == '__main__':
     parser.add_argument("--list", action="store_true", help="list data")
     parser.add_argument("--show", dest='objName', action="store", help="show data")
     parser.add_argument("--delete", dest='objToDelete', action="store", help="delete data")
-    parser.add_argument("--vdc", dest='vdcName', action="store", help="delete data")
+    parser.add_argument("--vdc", dest='vdcName', action="store", help="select specific pool")
     parser.add_argument("--username", action="store_true", help="VCloud username")
     parser.add_argument("--password", action="store_true", help="VCloud password")
     parser.add_argument("--org", action="store_true", help="VCloud Organisation")
