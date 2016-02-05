@@ -16,23 +16,33 @@ def login_VCD(l_user,l_password,l_org,l_url):
 
 def display_vapp(l_url):
     # Make the query to gather the info
-    f_http = os.popen('http --session=vcdcli GET ' + l_url + '/vApps/query?pageSize=200')
+    f_http = os.popen('http --session=vcdcli GET ' + l_url + '/vApps/query?pageSize=128')
     xmldata = f_http.read()
-    tree = ET.fromstring(xmldata)
-
+    queryResult = ET.fromstring(xmldata)
+    queryTotal = queryResult.attrib.get('total')
+    if int(queryTotal) > 128:
+        queryPages = 2
+    else:
+        queryPages = 1
+                
     # Build a table to display info
     t_vapp = PrettyTable(['Vapp Name', 'CPU', 'Ram (MB)', 'Storage (KB)', 'Status', 'Deployed', 'Vdc'])
     t_vapp.align['Vapp Name'] = 'l'
 
-    for elem in tree.iter(tag='{http://www.vmware.com/vcloud/v1.5}VAppRecord'):
-        vappName = elem.attrib.get('name')
-        vappStatus =  elem.attrib.get('status')
-        vappDeploy =  elem.attrib.get('isDeployed')
-        vappVdc =  elem.attrib.get('vdcName')
-        vappCPU =  elem.attrib.get('numberOfCpus')
-        vappMem = elem.attrib.get('memoryAllocationMB')
-        vappStorage = elem.attrib.get('storageKB')
-        t_vapp.add_row([vappName, vappCPU, vappMem, vappStorage, vappStatus, vappDeploy, vappVdc])
+    for pageNum in range(1,queryPages+1):
+        f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + '"')
+        xmldata = f_http.read()
+    
+        tree = ET.fromstring(xmldata)
+        for elem in tree.iter(tag='{http://www.vmware.com/vcloud/v1.5}VAppRecord'):
+            vappName = elem.attrib.get('name')
+            vappStatus =  elem.attrib.get('status')
+            vappDeploy =  elem.attrib.get('isDeployed')
+            vappVdc =  elem.attrib.get('vdcName')
+            vappCPU =  elem.attrib.get('numberOfCpus')
+            vappMem = elem.attrib.get('memoryAllocationMB')
+            vappStorage = elem.attrib.get('storageKB')
+            t_vapp.add_row([vappName, vappCPU, vappMem, vappStorage, vappStatus, vappDeploy, vappVdc])
 
     print t_vapp.get_string(sortby="Vapp Name")
 
@@ -91,29 +101,29 @@ def display_pool(l_url):
 
 def show_vapp_info(l_url, l_vappName):
     vappInfo = get_vapp_info(l_url,l_vappName)
-    l_vappUrl = vappInfo['vappUrl']
+    if vappInfo:
+        l_vappUrl = vappInfo['vappUrl']
+        f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
+        xmldata = f_http.read()
+        Vapptree = ET.fromstring(xmldata)
 
-    f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
-    xmldata = f_http.read()
-    Vapptree = ET.fromstring(xmldata)
+        for elem in Vapptree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
+            l_vmUrl = elem.attrib.get('href')
+    
+        vmCusto = get_vm_custo(l_vmUrl)
 
-    for elem in Vapptree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
-        l_vmUrl = elem.attrib.get('href')
+        t_vappInfo = PrettyTable(['Attribute', 'Value'])
+        t_vappInfo.align['Value'] = 'l'
     
-    vmCusto = get_vm_custo(l_vmUrl)
+    
+        for key, value in vappInfo.iteritems():
+            t_vappInfo.add_row([key, value])
 
-    t_vappInfo = PrettyTable(['Attribute', 'Value'])
-    t_vappInfo.align['Value'] = 'l'
+        t_vappInfo.add_row(['-------- VM ---------',''])
+        for key, value in vmCusto.iteritems():
+            t_vappInfo.add_row([key, value])
     
-    
-    for key, value in vappInfo.iteritems():
-        t_vappInfo.add_row([key, value])
-
-    t_vappInfo.add_row(['-------- VM ---------',''])
-    for key, value in vmCusto.iteritems():
-        t_vappInfo.add_row([key, value])
-    
-    print t_vappInfo
+        print t_vappInfo
 
 def get_vm_custo(vm_url):
     f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/guestCustomizationSection/')
@@ -160,8 +170,12 @@ def get_vapp_info(l_url,l_vappName):
         vappStorage = elem.attrib.get('storageKB')
         vappCreationDate = elem.attrib.get('creationDate')
         vappOwnerName = elem.attrib.get('ownerName')
+    try:
+        if vappName:
+            return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName}
+    except:
+        print 'Vapp ' + l_vappName + ' not found.'
 
-    return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName}
 
 def show_tmpl_info(l_url,l_tmplName):
     print 'show template info' + l_tmplName
@@ -247,11 +261,12 @@ def wait_for_task(l_taskUrl):
 if __name__ == '__main__':
     # Parsing of the command line aguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("operation", nargs='?', help="vapp, template...")
+    parser.add_argument("operation", nargs='?', help="vapp, template, pool ...")
     parser.add_argument("--login", action="store_true", help="login with new credentials")
     parser.add_argument("--list", action="store_true", help="list data")
     parser.add_argument("--show", dest='objName', action="store", help="show data")
     parser.add_argument("--delete", dest='objToDelete', action="store", help="delete data")
+    parser.add_argument("--vdc", dest='vdcName', action="store", help="delete data")
     parser.add_argument("--username", action="store_true", help="VCloud username")
     parser.add_argument("--password", action="store_true", help="VCloud password")
     parser.add_argument("--org", action="store_true", help="VCloud Organisation")
