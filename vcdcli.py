@@ -295,6 +295,20 @@ def power_off_vapp(l_url,l_vappName):
             l_taskUrl = task_info['taskUrl']
             wait_for_task(l_taskUrl)
 
+def delete_vapp(l_url,l_vappName):
+    print 'Deleting vapp ' + l_vappName
+    vappInfo = get_vapp_info(l_url,l_vappName)
+    if vappInfo:
+        if vappInfo['vappStatus'] == 'POWERED_ON':
+            power_off_vapp(l_url,l_vappName)
+            
+        l_vappUrl = vappInfo['vappUrl']
+        f_http = os.popen('http --session=vcdcli DELETE ' + l_vappUrl)
+        xmldata = f_http.read()
+        task_info = decode_task_info(xmldata)
+        print task_info['taskOperation']
+        l_taskUrl = task_info['taskUrl']
+        wait_for_task(l_taskUrl)
 
 """
 ************************************** Main **********************************************************
@@ -340,6 +354,8 @@ if __name__ == '__main__':
             power_on_vapp(vcdUrl,args.vappON)
         elif args.vappOFF:
             power_off_vapp(vcdUrl,args.vappOFF)
+        elif args.objToDelete:
+            delete_vapp(vcdUrl,args.objToDelete)
     elif args.operation == 'pool':
         if args.list:
             display_pool(vcdUrl)
