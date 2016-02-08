@@ -296,7 +296,6 @@ def power_off_vapp(l_url,l_vappName):
             wait_for_task(l_taskUrl)
 
 def delete_vapp(l_url,l_vappName):
-    print 'Deleting vapp ' + l_vappName
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
@@ -309,6 +308,20 @@ def delete_vapp(l_url,l_vappName):
         print task_info['taskOperation']
         l_taskUrl = task_info['taskUrl']
         wait_for_task(l_taskUrl)
+
+def shutdown_vapp(l_url,l_vappName):
+    print 'Shutdown vapp ' + l_vappName
+    vappInfo = get_vapp_info(l_url,l_vappName)
+    if vappInfo:
+        if vappInfo['vappStatus'] == 'POWERED_ON':
+            l_vappUrl = vappInfo['vappUrl']
+            f_http = os.popen('http --session=vcdcli POST ' + l_vappUrl + '/power/action/shutdown')
+            xmldata = f_http.read()
+            task_info = decode_task_info(xmldata)
+            print task_info['taskOperation']
+            l_taskUrl = task_info['taskUrl']
+            wait_for_task(l_taskUrl)
+
 
 """
 ************************************** Main **********************************************************
@@ -323,6 +336,7 @@ if __name__ == '__main__':
     parser.add_argument("--poweroff", dest='vappOFF', action="store", help="Power off Vapp")
     parser.add_argument("--show", dest='objName', action="store", help="show object")
     parser.add_argument("--delete", dest='objToDelete', action="store", help="delete object")
+    parser.add_argument("--shutdown", dest='vappShut', action="store", help="Shutdown vapp")
     parser.add_argument("--vdc", dest='vdcName', action="store", help="select specific pool")
     parser.add_argument("--username", action="store_true", help="VCloud username")
     parser.add_argument("--password", action="store_true", help="VCloud password")
@@ -356,6 +370,8 @@ if __name__ == '__main__':
             power_off_vapp(vcdUrl,args.vappOFF)
         elif args.objToDelete:
             delete_vapp(vcdUrl,args.objToDelete)
+        elif args.vappShut:
+            shutdown_vapp(vcdUrl,args.vappShut)
     elif args.operation == 'pool':
         if args.list:
             display_pool(vcdUrl)
