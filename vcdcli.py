@@ -111,32 +111,56 @@ def show_vapp_info(l_url, l_vappName):
         f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
         xmldata = f_http.read()
         Vapptree = ET.fromstring(xmldata)
+        
+        # Get Vapp Description.
+        for elem in Vapptree:
+            if elem.tag == '{http://www.vmware.com/vcloud/v1.5}Description':
+                l_vappDesc = elem.text
 
+        # Get Vm URL from the Vapp
         for elem in Vapptree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
             l_vmUrl = elem.attrib.get('href')
-    
+
+        # Get currently customization settings.
         vmCusto = get_vm_custo(l_vmUrl)
 
+        # Create a table with all info
         t_vappInfo = PrettyTable(['Attribute', 'Value'])
         t_vappInfo.align['Value'] = 'l'
-    
     
         for key, value in vappInfo.iteritems():
             t_vappInfo.add_row([key, value])
 
+        t_vappInfo.add_row(['vappDesc', l_vappDesc])
+
         t_vappInfo.add_row(['-------- VM ---------',''])
+        t_vappInfo.add_row(['vmUrl', l_vmUrl])
         for key, value in vmCusto.iteritems():
             t_vappInfo.add_row([key, value])
-    
+        
+        # Print the table.
         print t_vappInfo
 
 def get_vm_custo(vm_url):
     f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/guestCustomizationSection/')
-    xmldata = f_http.read()
+    xmlcusto = f_http.read()
+
+    f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/networkConnectionSection/')
+    xmlnet = f_http.read()
 
     vmCusto = {}
-
-    Vmtree = ET.fromstring(xmldata)
+    
+    VmnetTree = ET.fromstring(xmlnet)
+    for elem in VmnetTree.iter('{http://www.vmware.com/vcloud/v1.5}NetworkConnection'):
+        #vmCusto['Network'] = elem.attrib.get('network')
+        ipAllocMode = elem.find('{http://www.vmware.com/vcloud/v1.5}IpAddressAllocationMode').text
+        if ipAllocMode != 'NONE':
+            try:
+                vmCusto['IpAddress'] = vmCusto['IpAddress'] + ', ' + elem.find('{http://www.vmware.com/vcloud/v1.5}IpAddress').text
+            except:
+                vmCusto['IpAddress'] = elem.find('{http://www.vmware.com/vcloud/v1.5}IpAddress').text
+        
+    Vmtree = ET.fromstring(xmlcusto)
     for elem in Vmtree:
         #print elem.tag, elem.text
         if elem.tag == '{http://www.vmware.com/vcloud/v1.5}Enabled':
