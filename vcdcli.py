@@ -4,8 +4,7 @@ from pprint import pprint
 import requests
 import base64
 import xml.etree.ElementTree as ET
-import time, datetime, os
-import sys
+import time, datetime, os, sys
 from prettytable import PrettyTable
 import argparse
 from math import *
@@ -107,6 +106,7 @@ def display_pool(l_url):
 def show_vapp_info(l_url, l_vappName):
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
+        l_vappDesc = ''
         l_vappUrl = vappInfo['vappUrl']
         f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
         xmldata = f_http.read()
@@ -130,7 +130,7 @@ def show_vapp_info(l_url, l_vappName):
     
         for key, value in vappInfo.iteritems():
             t_vappInfo.add_row([key, value])
-
+            
         t_vappInfo.add_row(['vappDesc', l_vappDesc])
 
         t_vappInfo.add_row(['-------- VM ---------',''])
@@ -148,7 +148,15 @@ def get_vm_custo(vm_url):
     f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/networkConnectionSection/')
     xmlnet = f_http.read()
 
+    f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/operatingSystemSection/')
+    xmlOSversion = f_http.read()
+
     vmCusto = {}
+    
+    VmOsVersion = ET.fromstring(xmlOSversion)
+    for elem in VmOsVersion:
+        if elem.tag == '{http://schemas.dmtf.org/ovf/envelope/1}Description':
+            vmCusto['OsVersion'] = elem.text
     
     VmnetTree = ET.fromstring(xmlnet)
     for elem in VmnetTree.iter('{http://www.vmware.com/vcloud/v1.5}NetworkConnection'):
@@ -362,10 +370,10 @@ if __name__ == '__main__':
     parser.add_argument("--delete", dest='objToDelete', action="store", help="delete object")
     parser.add_argument("--shutdown", dest='vappShut', action="store", help="Shutdown vapp")
     parser.add_argument("--vdc", dest='vdcName', action="store", help="select specific pool")
-    parser.add_argument("--username", action="store_true", help="VCloud username")
-    parser.add_argument("--password", action="store_true", help="VCloud password")
-    parser.add_argument("--org", action="store_true", help="VCloud Organisation")
-    parser.add_argument("--host", action="store_true", help="VCloud host")
+    parser.add_argument("--username", dest='VcloudUsername', action="store", help="VCloud username")
+    parser.add_argument("--password", dest='VcloudPassword', action="store", help="VCloud password")
+    parser.add_argument("--org", dest='VcloudOrg', action="store", help="VCloud Organisation")
+    parser.add_argument("--host", dest='VcloudHost', action="store", help="VCloud host")
     args = parser.parse_args()
 
     try:
@@ -375,8 +383,22 @@ if __name__ == '__main__':
         vcdOrg = os.environ['vcdOrg']
         vcdUrl = "https://" + vcdHost + "/api"
     except:
-        parser.print_help()
-        sys.exit(1) 
+        if args.VcloudUsername:
+            vcdUsername = args.VcloudUsername
+            vcdPassword = args.VcloudPassword
+            vcdOrg = args.VcloudOrg
+            vcdHost = args.VcloudHost
+            vcdUrl = "https://" + vcdHost + "/api"
+        else:
+            print 80 * '*'
+            print '* Please either define the env auth variables or enter your credentials:'
+            print '*    vcdHost: api endpoint hostname'
+            print '*    vcdUser: api username'
+            print '*    vcdPass: api user password'
+            print '*    vcdOrg: Organization to log to.'
+            print 80 * '*'
+            parser.print_help()
+            sys.exit(1) 
         
     #print args
     
