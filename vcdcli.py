@@ -104,6 +104,7 @@ def display_pool(l_url):
 
 
 def show_vapp_info(l_url, l_vappName):
+    l_vmUrl = ''
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
         l_vappDesc = ''
@@ -121,8 +122,9 @@ def show_vapp_info(l_url, l_vappName):
         for elem in Vapptree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
             l_vmUrl = elem.attrib.get('href')
 
-        # Get currently customization settings.
-        vmCusto = get_vm_custo(l_vmUrl)
+        if l_vmUrl != '':
+            # Get currently customization settings.
+            vmCusto = get_vm_custo(l_vmUrl)
 
         # Create a table with all info
         t_vappInfo = PrettyTable(['Attribute', 'Value'])
@@ -133,10 +135,11 @@ def show_vapp_info(l_url, l_vappName):
             
         t_vappInfo.add_row(['vappDesc', l_vappDesc])
 
-        t_vappInfo.add_row(['-------- VM ---------',''])
-        t_vappInfo.add_row(['vmUrl', l_vmUrl])
-        for key, value in vmCusto.iteritems():
-            t_vappInfo.add_row([key, value])
+        if l_vmUrl != '':
+            t_vappInfo.add_row(['-------- VM ---------',''])
+            t_vappInfo.add_row(['vmUrl', l_vmUrl])
+            for key, value in vmCusto.iteritems():
+                t_vappInfo.add_row([key, value])
         
         # Print the table.
         print t_vappInfo
@@ -151,8 +154,16 @@ def get_vm_custo(vm_url):
     f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/operatingSystemSection/')
     xmlOSversion = f_http.read()
 
+    f_http = os.popen('http --session=vcdcli GET ' + vm_url)
+    xmlVm = f_http.read()
+
     vmCusto = {}
-    
+
+    VmTree = ET.fromstring(xmlVm)
+    for elem in VmTree.iter('{http://www.vmware.com/vcloud/v1.5}StorageProfile'):
+        vmCusto['vmStorageProfile'] = elem.attrib.get('name')
+        #vmCusto['vmStorageProfileUrl'] = elem.attrib.get('href')
+            
     VmOsVersion = ET.fromstring(xmlOSversion)
     for elem in VmOsVersion:
         if elem.tag == '{http://schemas.dmtf.org/ovf/envelope/1}Description':
@@ -160,7 +171,7 @@ def get_vm_custo(vm_url):
     
     VmnetTree = ET.fromstring(xmlnet)
     for elem in VmnetTree.iter('{http://www.vmware.com/vcloud/v1.5}NetworkConnection'):
-        #vmCusto['Network'] = elem.attrib.get('network')
+        vmCusto['Network'] = elem.attrib.get('network')
         ipAllocMode = elem.find('{http://www.vmware.com/vcloud/v1.5}IpAddressAllocationMode').text
         if ipAllocMode != 'NONE':
             try:
@@ -215,8 +226,16 @@ def get_vapp_info(l_url,l_vappName):
 
 
 def show_tmpl_info(l_url,l_tmplName):
-    print 'show template info' + l_tmplName
+    #print 'show template info' + l_tmplName
     tmpl_info = get_tmpl_info(l_url,l_tmplName)
+    
+    t_tmplInfo = PrettyTable(['Attribute', 'Value'])
+    t_tmplInfo.align['Value'] = 'l'
+    
+    for key, value in tmpl_info.iteritems():
+        t_tmplInfo.add_row([key, value])
+    
+    print t_tmplInfo
 
 def get_tmpl_info(l_url,l_tmplName):
     f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&filter=(name==' + l_tmplName + ')"')
