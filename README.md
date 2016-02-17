@@ -1,9 +1,12 @@
 # vcdcli
-VCloud director cli
+Cli for Vmware VCloud Director.
 
 
 ## Requirement:
 	1. HTTPie (apt-get install HTTPie)
+	2. Requests (apt-get install python-requests)
+	3. PrettyTable (apt-get install python-prettytable)
+	
 
 ## Usage:
 	usage: vcdcli.py [-h] [--login] [--list] [--poweron VAPPON]
