@@ -256,20 +256,24 @@ def get_tmpl_info(l_url,l_tmplName):
         tmplCreationDate = elem.attrib.get('creationDate')
         tmplNumCPU = elem.attrib.get('numberOfCpus')
     
-    return {'tmplName':tmplName, 'tmplUrl':tmplUrl, 'tmplStatus':tmplStatus, 'tmplOwner':tmplOwner, 'tmplCpuAllocMhz':tmplCpuAllocMhz, 'tmplMemAlloc':tmplMemAlloc, 'tmplNumVM':tmplNumVM, 'tmplVdcName':tmplVdcName, 'tmplStorage':tmplStorage, 'tmplCreationDate':tmplCreationDate, 'tmplNumCPU':tmplNumCPU }
-
+    try:
+        return {'tmplName':tmplName, 'tmplUrl':tmplUrl, 'tmplStatus':tmplStatus, 'tmplOwner':tmplOwner, 'tmplCpuAllocMhz':tmplCpuAllocMhz, 'tmplMemAlloc':tmplMemAlloc, 'tmplNumVM':tmplNumVM, 'tmplVdcName':tmplVdcName, 'tmplStorage':tmplStorage, 'tmplCreationDate':tmplCreationDate, 'tmplNumCPU':tmplNumCPU }
+    except:
+        print 'Template ' + l_tmplName + ' not found.'
+        
 def delete_template(l_url,l_tmplName):
     #print 'Deleting template ' + l_tmplName
     tmpl_info = get_tmpl_info(l_url, l_tmplName)
-    tmplUrl = tmpl_info['tmplUrl']
+    if tmpl_info:
+        tmplUrl = tmpl_info['tmplUrl']
     
-    if tmplUrl:   
-        f_http = os.popen('http --session=vcdcli DELETE ' + tmplUrl)
-        xmldata = f_http.read()
-        task_info = decode_task_info(xmldata)
-        print task_info['taskOperation']
-        l_taskUrl = task_info['taskUrl']
-        wait_for_task(l_taskUrl)
+        if tmplUrl:   
+            f_http = os.popen('http --session=vcdcli DELETE ' + tmplUrl)
+            xmldata = f_http.read()
+            task_info = decode_task_info(xmldata)
+            print task_info['taskOperation']
+            l_taskUrl = task_info['taskUrl']
+            wait_for_task(l_taskUrl)
 
 def decode_task_info(l_xmlTask):
     taskTree = ET.fromstring(l_xmlTask)

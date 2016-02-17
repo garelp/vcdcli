@@ -51,4 +51,10 @@ Cli for Vmware VCloud Director.
 	
 	4. List all pools (vdc):
 		vcdcli pool --list
-
+	
+	5. Vapp operations:
+		Currently power on/off and shutdown is supported. You can also delete a Vapp.
+	
+	6. Delete template:
+		vcdcli template --delete TmplName
+		
