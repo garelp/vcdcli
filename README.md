@@ -35,4 +35,20 @@ Cli for Vmware VCloud Director.
 	                        VCloud password
 	  --org VCLOUDORG       VCloud Organisation
 	  --host VCLOUDHOST     VCloud host
-  
+
+## Examples:
+	1. To list all vapps:
+		vcdcli vapp --list
+		
+	2. To list vapp in a specific vdc
+		vcdcli vapp --list --vdc VdcName
+		
+	3. Show Vapp info:
+		vcdcli vapp --show VappName
+		
+	3. To list all templates:
+		vcdcli template --list
+	
+	4. List all pools (vdc):
+		vcdcli pool --list
+
