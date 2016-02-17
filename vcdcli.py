@@ -229,13 +229,14 @@ def show_tmpl_info(l_url,l_tmplName):
     #print 'show template info' + l_tmplName
     tmpl_info = get_tmpl_info(l_url,l_tmplName)
     
-    t_tmplInfo = PrettyTable(['Attribute', 'Value'])
-    t_tmplInfo.align['Value'] = 'l'
+    if tmpl_info: 
+        t_tmplInfo = PrettyTable(['Attribute', 'Value'])
+        t_tmplInfo.align['Value'] = 'l'
     
-    for key, value in tmpl_info.iteritems():
-        t_tmplInfo.add_row([key, value])
+        for key, value in tmpl_info.iteritems():
+            t_tmplInfo.add_row([key, value])
     
-    print t_tmplInfo
+        print t_tmplInfo
 
 def get_tmpl_info(l_url,l_tmplName):
     f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&filter=(name==' + l_tmplName + ')"')
