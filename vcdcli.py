@@ -361,7 +361,7 @@ def delete_vapp(l_url,l_vappName):
         wait_for_task(l_taskUrl)
 
 def shutdown_vapp(l_url,l_vappName):
-    print 'Shutdown vapp ' + l_vappName
+    #print 'Shutdown vapp ' + l_vappName
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
