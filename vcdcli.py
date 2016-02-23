@@ -218,9 +218,10 @@ def get_vapp_info(l_url,l_vappName):
         vappStorage = elem.attrib.get('storageKB')
         vappCreationDate = elem.attrib.get('creationDate')
         vappOwnerName = elem.attrib.get('ownerName')
+        vappHardwareVersion = elem.attrib.get('lowestHardwareVersionInVApp')
     try:
         if vappName:
-            return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName}
+            return {'vappName':vappName, 'vappUrl':vappUrl, 'vappStatus':vappStatus, 'vappDeploy':vappDeploy, 'vappVdc':vappVdc, 'vappCPU':vappCPU, 'vappMem':vappMem, 'vappStorage':vappStorage, 'vappCreationDate':vappCreationDate, 'vappOwnerName':vappOwnerName, 'vappHardwareVersion':vappHardwareVersion }
     except:
         print 'Vapp ' + l_vappName + ' not found.'
 
