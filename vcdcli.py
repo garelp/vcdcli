@@ -23,11 +23,13 @@ def display_vapp(l_url,l_vdcName):
     xmldata = f_http.read()
     queryResult = ET.fromstring(xmldata)
     queryTotal = queryResult.attrib.get('total')
-    if int(queryTotal) > 128:
+    if int(queryTotal) > 256:
+        queryPages = 3
+    elif int(queryTotal) > 128:
         queryPages = 2
     else:
         queryPages = 1
-                
+
     # Build a table to display info
     t_vapp = PrettyTable(['Vapp Name', 'CPU', 'Ram (MB)', 'Storage (KB)', 'Status', 'Deployed', 'Vdc'])
     t_vapp.align['Vapp Name'] = 'l'
@@ -36,7 +38,7 @@ def display_vapp(l_url,l_vdcName):
     for pageNum in range(1,queryPages+1):
         f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + queryVdc + '"')
         xmldata = f_http.read()
-    
+
         tree = ET.fromstring(xmldata)
         for elem in tree.iter(tag='{http://www.vmware.com/vcloud/v1.5}VAppRecord'):
             vappName = elem.attrib.get('name')
@@ -58,10 +60,10 @@ def display_template(l_url):
     #print tree.tag
     #print tree.attrib
     #print xmldata
-    
+
     t_template = PrettyTable(['Template Name', 'Storage (KB)', 'NumCPU', 'Mem Alloc (MB)', '# VM', 'Status', 'Catalog Name'])
     t_template.align['Template Name'] = 'l'
-    
+
     for elem in tree:
         templateName = elem.attrib.get('name')
         templateStatus = elem.attrib.get('status')
@@ -70,7 +72,7 @@ def display_template(l_url):
         templateNumCPU = elem.attrib.get('numberOfCpus')
         templateMemAlloc = elem.attrib.get('memoryAllocationMB')
         templateNumVM = elem.attrib.get('numberOfVMs')
-        
+
         if templateName:
             t_template.add_row([templateName, templateStorage, templateNumCPU, templateMemAlloc, templateNumVM, templateStatus, templateCatalog])
 
@@ -83,7 +85,7 @@ def display_pool(l_url):
 
     t_pool = PrettyTable(['Pool Name', '# of Vapps', 'Cpu Used(MHz)', 'Cpu Limit(MHz)', 'Memory Used(MB)', 'Memory Limit(MB)', 'Storage Used(MB)', 'Storage Limit(MB)'])
     t_pool.align['Pool Name'] = 'l'
-    
+
     for elem in tree:
         poolName = elem.attrib.get('name')
         poolVapps = elem.attrib.get('numberOfVApps')
@@ -112,7 +114,7 @@ def show_vapp_info(l_url, l_vappName):
         f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
         xmldata = f_http.read()
         Vapptree = ET.fromstring(xmldata)
-        
+
         # Get Vapp Description.
         for elem in Vapptree:
             if elem.tag == '{http://www.vmware.com/vcloud/v1.5}Description':
@@ -129,10 +131,10 @@ def show_vapp_info(l_url, l_vappName):
         # Create a table with all info
         t_vappInfo = PrettyTable(['Attribute', 'Value'])
         t_vappInfo.align['Value'] = 'l'
-    
+
         for key, value in vappInfo.iteritems():
             t_vappInfo.add_row([key, value])
-            
+
         t_vappInfo.add_row(['vappDesc', l_vappDesc])
 
         if l_vmUrl != '':
@@ -140,7 +142,7 @@ def show_vapp_info(l_url, l_vappName):
             t_vappInfo.add_row(['vmUrl', l_vmUrl])
             for key, value in vmCusto.iteritems():
                 t_vappInfo.add_row([key, value])
-        
+
         # Print the table.
         print t_vappInfo
 
@@ -163,12 +165,12 @@ def get_vm_custo(vm_url):
     for elem in VmTree.iter('{http://www.vmware.com/vcloud/v1.5}StorageProfile'):
         vmCusto['vmStorageProfile'] = elem.attrib.get('name')
         #vmCusto['vmStorageProfileUrl'] = elem.attrib.get('href')
-            
+
     VmOsVersion = ET.fromstring(xmlOSversion)
     for elem in VmOsVersion:
         if elem.tag == '{http://schemas.dmtf.org/ovf/envelope/1}Description':
             vmCusto['OsVersion'] = elem.text
-    
+
     VmnetTree = ET.fromstring(xmlnet)
     for elem in VmnetTree.iter('{http://www.vmware.com/vcloud/v1.5}NetworkConnection'):
         vmCusto['Network'] = elem.attrib.get('network')
@@ -178,7 +180,7 @@ def get_vm_custo(vm_url):
                 vmCusto['IpAddress'] = vmCusto['IpAddress'] + ', ' + elem.find('{http://www.vmware.com/vcloud/v1.5}IpAddress').text
             except:
                 vmCusto['IpAddress'] = elem.find('{http://www.vmware.com/vcloud/v1.5}IpAddress').text
-        
+
     Vmtree = ET.fromstring(xmlcusto)
     for elem in Vmtree:
         #print elem.tag, elem.text
@@ -200,13 +202,13 @@ def get_vm_custo(vm_url):
             vmCusto['ComputerName'] = elem.text
 
     return vmCusto
-    
+
 
 def get_vapp_info(l_url,l_vappName):
     f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vApp&filter=(name==' + l_vappName + ')"')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
-    
+
     for elem in tree.findall('{http://www.vmware.com/vcloud/v1.5}VAppRecord'):
         vappUrl = elem.attrib.get('href')
         vappName = elem.attrib.get('name')
@@ -229,14 +231,14 @@ def get_vapp_info(l_url,l_vappName):
 def show_tmpl_info(l_url,l_tmplName):
     #print 'show template info' + l_tmplName
     tmpl_info = get_tmpl_info(l_url,l_tmplName)
-    
-    if tmpl_info: 
+
+    if tmpl_info:
         t_tmplInfo = PrettyTable(['Attribute', 'Value'])
         t_tmplInfo.align['Value'] = 'l'
-    
+
         for key, value in tmpl_info.iteritems():
             t_tmplInfo.add_row([key, value])
-    
+
         print t_tmplInfo
 
 def get_tmpl_info(l_url,l_tmplName):
@@ -244,7 +246,7 @@ def get_tmpl_info(l_url,l_tmplName):
     xmldata = f_http.read()
     #print xmldata
     tree = ET.fromstring(xmldata)
-    
+
     for elem in tree.findall('{http://www.vmware.com/vcloud/v1.5}VAppTemplateRecord'):
         tmplUrl = elem.attrib.get('href')
         tmplName = elem.attrib.get('name')
@@ -257,19 +259,19 @@ def get_tmpl_info(l_url,l_tmplName):
         tmplStorage = elem.attrib.get('storageKB')
         tmplCreationDate = elem.attrib.get('creationDate')
         tmplNumCPU = elem.attrib.get('numberOfCpus')
-    
+
     try:
         return {'tmplName':tmplName, 'tmplUrl':tmplUrl, 'tmplStatus':tmplStatus, 'tmplOwner':tmplOwner, 'tmplCpuAllocMhz':tmplCpuAllocMhz, 'tmplMemAlloc':tmplMemAlloc, 'tmplNumVM':tmplNumVM, 'tmplVdcName':tmplVdcName, 'tmplStorage':tmplStorage, 'tmplCreationDate':tmplCreationDate, 'tmplNumCPU':tmplNumCPU }
     except:
         print 'Template ' + l_tmplName + ' not found.'
-        
+
 def delete_template(l_url,l_tmplName):
     #print 'Deleting template ' + l_tmplName
     tmpl_info = get_tmpl_info(l_url, l_tmplName)
     if tmpl_info:
         tmplUrl = tmpl_info['tmplUrl']
-    
-        if tmplUrl:   
+
+        if tmplUrl:
             f_http = os.popen('http --session=vcdcli DELETE ' + tmplUrl)
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
@@ -285,21 +287,21 @@ def decode_task_info(l_xmlTask):
     taskId = taskTree.attrib.get('id').split( ':' )
     taskID = taskId[3]
     taskUrl = taskTree.attrib.get('href')
-    
+
     return { 'taskStatus':taskStatus, 'taskId':taskID, 'taskUrl':taskUrl, 'taskOperation':taskOperation }
 
 def get_task_info(l_taskUrl):
     f_http = os.popen('http --session=vcdcli GET "' + l_taskUrl + '"')
     l_xmlTask = f_http.read()
-    
-    taskTree = ET.fromstring(l_xmlTask)    
+
+    taskTree = ET.fromstring(l_xmlTask)
     taskStatus = taskTree.attrib.get('status')
     taskStarttime = taskTree.attrib.get('startTime')
     taskOperation = taskTree.attrib.get('operation')
     taskId = taskTree.attrib.get('id').split( ':' )
     taskID = taskId[3]
     taskUrl = taskTree.attrib.get('href')
-    
+
     return { 'taskStatus':taskStatus, 'taskId':taskID, 'taskUrl':taskUrl, 'taskOperation':taskOperation }
 
 def wait_for_task(l_taskUrl):
@@ -310,12 +312,12 @@ def wait_for_task(l_taskUrl):
         sys.stdout.flush()
         task_info = get_task_info(l_taskUrl)
         taskStatus = task_info['taskStatus']
-    
+
     if taskStatus == 'error':
         print 'Task Error.'
     else:
         print '\nDone.'
-        
+
 def power_on_vapp(l_url,l_vappName):
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
@@ -331,7 +333,7 @@ def power_on_vapp(l_url,l_vappName):
 
 def power_off_vapp(l_url,l_vappName):
     vcdUndeployAction = '<UndeployVAppParams xmlns=\"http://www.vmware.com/vcloud/v1.5\"><UndeployPowerAction>powerOff</UndeployPowerAction></UndeployVAppParams>'
-    
+
     vappInfo = get_vapp_info(l_url,l_vappName)
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
@@ -342,9 +344,9 @@ def power_off_vapp(l_url,l_vappName):
             print task_info['taskOperation']
             l_taskUrl = task_info['taskUrl']
             wait_for_task(l_taskUrl)
-            
+
         if vappInfo['vappDeploy'] == 'true':
-            vappUrl = vappInfo['vappUrl']            
+            vappUrl = vappInfo['vappUrl']
             f_http = os.popen('echo \'' + vcdUndeployAction +'\' | http --session=vcdcli POST ' + vappUrl + '/action/undeploy \'Content-type:application/vnd.vmware.vcloud.undeployVAppParams+xml; charset=ISO-8859-1\' \'Accept:application/*+xml;version=5.1\'')
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
@@ -357,7 +359,7 @@ def delete_vapp(l_url,l_vappName):
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
             power_off_vapp(l_url,l_vappName)
-            
+
         l_vappUrl = vappInfo['vappUrl']
         f_http = os.popen('http --session=vcdcli DELETE ' + l_vappUrl)
         xmldata = f_http.read()
@@ -423,10 +425,10 @@ if __name__ == '__main__':
             print '*    vcdOrg: Organization to log to.'
             print 80 * '*'
             parser.print_help()
-            sys.exit(1) 
-        
+            sys.exit(1)
+
     #print args
-    
+
     if args.login:
         login_VCD( vcdUsername, vcdPassword, vcdOrg, vcdUrl )
 
@@ -456,7 +458,5 @@ if __name__ == '__main__':
             delete_template(vcdUrl,args.objToDelete)
     else:
         parser.print_help()
-        
-    sys.exit(0) 
 
-
+    sys.exit(0)
