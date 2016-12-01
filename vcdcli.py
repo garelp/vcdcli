@@ -159,12 +159,21 @@ def get_vm_custo(vm_url):
     f_http = os.popen('http --session=vcdcli GET ' + vm_url)
     xmlVm = f_http.read()
 
+    # Create and array to store information
     vmCusto = {}
 
     VmTree = ET.fromstring(xmlVm)
     for elem in VmTree.iter('{http://www.vmware.com/vcloud/v1.5}StorageProfile'):
         vmCusto['vmStorageProfile'] = elem.attrib.get('name')
         #vmCusto['vmStorageProfileUrl'] = elem.attrib.get('href')
+
+    for elem in VmTree.findall('{http://www.vmware.com/vcloud/v1.5}RuntimeInfoSection'):
+        if elem is not None:
+            vmToolsVersion = elem.find('{http://www.vmware.com/vcloud/v1.5}VMWareTools').attrib.get('version')
+            vmCusto['VmwareTools'] = vmToolsVersion
+        else:
+            vmCusto['VmwareTools'] = "NONE"
+
 
     VmOsVersion = ET.fromstring(xmlOSversion)
     for elem in VmOsVersion:
@@ -259,6 +268,10 @@ def get_tmpl_info(l_url,l_tmplName):
         tmplStorage = elem.attrib.get('storageKB')
         tmplCreationDate = elem.attrib.get('creationDate')
         tmplNumCPU = elem.attrib.get('numberOfCpus')
+
+        # Get Vm URL from the Vapp
+        for elem in tree.iter('{http://www.vmware.com/vcloud/v1.5}Vm'):
+            l_vmUrl = elem.attrib.get('href')
 
     try:
         return {'tmplName':tmplName, 'tmplUrl':tmplUrl, 'tmplStatus':tmplStatus, 'tmplOwner':tmplOwner, 'tmplCpuAllocMhz':tmplCpuAllocMhz, 'tmplMemAlloc':tmplMemAlloc, 'tmplNumVM':tmplNumVM, 'tmplVdcName':tmplVdcName, 'tmplStorage':tmplStorage, 'tmplCreationDate':tmplCreationDate, 'tmplNumCPU':tmplNumCPU }
