@@ -169,7 +169,10 @@ def get_vm_custo(vm_url):
 
     for elem in VmTree.findall('{http://www.vmware.com/vcloud/v1.5}RuntimeInfoSection'):
         if elem is not None:
-            vmToolsVersion = elem.find('{http://www.vmware.com/vcloud/v1.5}VMWareTools').attrib.get('version')
+            try:
+                vmToolsVersion = elem.find('{http://www.vmware.com/vcloud/v1.5}VMWareTools').attrib.get('version')
+            except:
+                vmToolsVersion = "Not installed"
             vmCusto['VmwareTools'] = vmToolsVersion
         else:
             vmCusto['VmwareTools'] = "NONE"
