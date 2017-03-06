@@ -450,7 +450,11 @@ if __name__ == '__main__':
 
     if args.operation == 'vapp':
         if args.list:
-            display_vapp(vcdUrl,args.vdcName)
+            try:
+                display_vapp(vcdUrl,args.vdcName)
+            except:
+                login_VCD( vcdUsername, vcdPassword, vcdOrg, vcdUrl )
+                display_vapp(vcdUrl,args.vdcName)
         elif args.objName:
             show_vapp_info(vcdUrl,args.objName)
         elif args.vappON:
@@ -463,11 +467,18 @@ if __name__ == '__main__':
             shutdown_vapp(vcdUrl,args.vappShut)
     elif args.operation == 'pool':
         if args.list:
-            display_pool(vcdUrl)
-
+            try:
+                display_pool(vcdUrl)
+            except:
+                login_VCD( vcdUsername, vcdPassword, vcdOrg, vcdUrl )
+                display_pool(vcdUrl)
     elif args.operation == 'template':
         if args.list:
-            display_template(vcdUrl)
+            try:
+                display_template(vcdUrl)
+            except:
+                login_VCD( vcdUsername, vcdPassword, vcdOrg, vcdUrl )
+                display_template(vcdUrl)
         elif args.objName:
             show_tmpl_info(vcdUrl,args.objName)
         elif args.objToDelete:
