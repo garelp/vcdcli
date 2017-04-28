@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 from pprint import pprint
 import requests
@@ -10,7 +10,7 @@ import argparse
 from math import *
 
 def login_VCD(l_user,l_password,l_org,l_url):
-    f_http = os.popen("http --session=vcdcli -a " + l_user + "@" + l_org + ":" + l_password +" POST " + l_url + "/sessions 'Accept:application/*+xml;version=5.1'")
+    f_http = os.popen("http --verify=no --session=vcdcli -a " + l_user + "@" + l_org + ":" + l_password +" POST " + l_url + "/sessions 'Accept:application/*+xml;version=5.1'")
     f_xmldata = f_http.read()
 
 def display_vapp(l_url,l_vdcName):
@@ -19,7 +19,7 @@ def display_vapp(l_url,l_vdcName):
         queryVdc = '&filter=(vdcName==' + l_vdcName + ')'
 
     # Make the query to gather the info
-    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128' + queryVdc + '"')
+    f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128' + queryVdc + '"')
     xmldata = f_http.read()
     queryResult = ET.fromstring(xmldata)
     queryTotal = queryResult.attrib.get('total')
@@ -36,7 +36,7 @@ def display_vapp(l_url,l_vdcName):
 
     # if there is more than 1 page do the others.
     for pageNum in range(1,queryPages+1):
-        f_http = os.popen('http --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + queryVdc + '"')
+        f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_url + '/vApps/query?pageSize=128&page=' + str(pageNum) + queryVdc + '"')
         xmldata = f_http.read()
 
         tree = ET.fromstring(xmldata)
@@ -53,7 +53,7 @@ def display_vapp(l_url,l_vdcName):
     print t_vapp.get_string(sortby="Vapp Name")
 
 def display_template(l_url):
-    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&pageSize=200"')
+    f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&pageSize=200"')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
 
@@ -79,7 +79,7 @@ def display_template(l_url):
     print t_template.get_string(sortby="Template Name")
 
 def display_pool(l_url):
-    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=orgVdc&pageSize=200"')
+    f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_url + '/query?type=orgVdc&pageSize=200"')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
 
@@ -111,7 +111,7 @@ def show_vapp_info(l_url, l_vappName):
     if vappInfo:
         l_vappDesc = ''
         l_vappUrl = vappInfo['vappUrl']
-        f_http = os.popen('http --session=vcdcli GET ' + l_vappUrl)
+        f_http = os.popen('http --verify=no --session=vcdcli GET ' + l_vappUrl)
         xmldata = f_http.read()
         Vapptree = ET.fromstring(xmldata)
 
@@ -147,16 +147,16 @@ def show_vapp_info(l_url, l_vappName):
         print t_vappInfo
 
 def get_vm_custo(vm_url):
-    f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/guestCustomizationSection/')
+    f_http = os.popen('http --verify=no --session=vcdcli GET ' + vm_url + '/guestCustomizationSection/')
     xmlcusto = f_http.read()
 
-    f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/networkConnectionSection/')
+    f_http = os.popen('http --verify=no --session=vcdcli GET ' + vm_url + '/networkConnectionSection/')
     xmlnet = f_http.read()
 
-    f_http = os.popen('http --session=vcdcli GET ' + vm_url + '/operatingSystemSection/')
+    f_http = os.popen('http --verify=no --session=vcdcli GET ' + vm_url + '/operatingSystemSection/')
     xmlOSversion = f_http.read()
 
-    f_http = os.popen('http --session=vcdcli GET ' + vm_url)
+    f_http = os.popen('http --verify=no --session=vcdcli GET ' + vm_url)
     xmlVm = f_http.read()
 
     # Create and array to store information
@@ -217,7 +217,7 @@ def get_vm_custo(vm_url):
 
 
 def get_vapp_info(l_url,l_vappName):
-    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vApp&filter=(name==' + l_vappName + ')"')
+    f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_url + '/query?type=vApp&filter=(name==' + l_vappName + ')"')
     xmldata = f_http.read()
     tree = ET.fromstring(xmldata)
 
@@ -254,7 +254,7 @@ def show_tmpl_info(l_url,l_tmplName):
         print t_tmplInfo
 
 def get_tmpl_info(l_url,l_tmplName):
-    f_http = os.popen('http --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&filter=(name==' + l_tmplName + ')"')
+    f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_url + '/query?type=vAppTemplate&filter=(name==' + l_tmplName + ')"')
     xmldata = f_http.read()
     #print xmldata
     tree = ET.fromstring(xmldata)
@@ -288,7 +288,7 @@ def delete_template(l_url,l_tmplName):
         tmplUrl = tmpl_info['tmplUrl']
 
         if tmplUrl:
-            f_http = os.popen('http --session=vcdcli DELETE ' + tmplUrl)
+            f_http = os.popen('http --verify=no --session=vcdcli DELETE ' + tmplUrl)
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
             print task_info['taskOperation']
@@ -307,7 +307,7 @@ def decode_task_info(l_xmlTask):
     return { 'taskStatus':taskStatus, 'taskId':taskID, 'taskUrl':taskUrl, 'taskOperation':taskOperation }
 
 def get_task_info(l_taskUrl):
-    f_http = os.popen('http --session=vcdcli GET "' + l_taskUrl + '"')
+    f_http = os.popen('http --verify=no --session=vcdcli GET "' + l_taskUrl + '"')
     l_xmlTask = f_http.read()
 
     taskTree = ET.fromstring(l_xmlTask)
@@ -339,7 +339,7 @@ def power_on_vapp(l_url,l_vappName):
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_OFF':
             vappUrl = vappInfo['vappUrl']
-            f_http = os.popen('http --session=vcdcli POST ' + vappUrl + '/power/action/powerOn')
+            f_http = os.popen('http --verify=no --session=vcdcli POST ' + vappUrl + '/power/action/powerOn')
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
             print task_info['taskOperation']
@@ -354,7 +354,7 @@ def power_off_vapp(l_url,l_vappName):
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
             vappUrl = vappInfo['vappUrl']
-            f_http = os.popen('http --session=vcdcli POST ' + vappUrl + '/power/action/powerOff')
+            f_http = os.popen('http --verify=no --session=vcdcli POST ' + vappUrl + '/power/action/powerOff')
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
             print task_info['taskOperation']
@@ -363,7 +363,7 @@ def power_off_vapp(l_url,l_vappName):
 
         if vappInfo['vappDeploy'] == 'true':
             vappUrl = vappInfo['vappUrl']
-            f_http = os.popen('echo \'' + vcdUndeployAction +'\' | http --session=vcdcli POST ' + vappUrl + '/action/undeploy \'Content-type:application/vnd.vmware.vcloud.undeployVAppParams+xml; charset=ISO-8859-1\' \'Accept:application/*+xml;version=5.1\'')
+            f_http = os.popen('echo \'' + vcdUndeployAction +'\' | http --verify=no --session=vcdcli POST ' + vappUrl + '/action/undeploy \'Content-type:application/vnd.vmware.vcloud.undeployVAppParams+xml; charset=ISO-8859-1\' \'Accept:application/*+xml;version=5.1\'')
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
             print 'Undeploying Virtual Application ' + l_vappName
@@ -377,7 +377,7 @@ def delete_vapp(l_url,l_vappName):
             power_off_vapp(l_url,l_vappName)
 
         l_vappUrl = vappInfo['vappUrl']
-        f_http = os.popen('http --session=vcdcli DELETE ' + l_vappUrl)
+        f_http = os.popen('http --verify=no --session=vcdcli DELETE ' + l_vappUrl)
         xmldata = f_http.read()
         task_info = decode_task_info(xmldata)
         print task_info['taskOperation']
@@ -390,7 +390,7 @@ def shutdown_vapp(l_url,l_vappName):
     if vappInfo:
         if vappInfo['vappStatus'] == 'POWERED_ON':
             l_vappUrl = vappInfo['vappUrl']
-            f_http = os.popen('http --session=vcdcli POST ' + l_vappUrl + '/power/action/shutdown')
+            f_http = os.popen('http --verify=no --session=vcdcli POST ' + l_vappUrl + '/power/action/shutdown')
             xmldata = f_http.read()
             task_info = decode_task_info(xmldata)
             print task_info['taskOperation']
